@@ -8,11 +8,15 @@ def get_cpu_info():
     cpu_temp = psutil.sensors_temperatures()
     if 'coretemp' in cpu_temp:
         core_temp = cpu_temp['coretemp']
+        # 计算总的 CPU 温度
+        per_cpu_temp = sum(sensor.current for sensor in core_temp) / len(core_temp)
+    cpu_percents=psutil.cpu_percent(percpu=True,interval=FRSHTIME)
+    per_cpu_util=sum(cpu_percent*10 for cpu_percent in cpu_percents)/len(cpu_percents)
     cpu_info = {
             "logical_cpu_count": psutil.cpu_count(logical=False),
             "cpu_freq":psutil.cpu_freq(),
-            "cpu_percent": psutil.cpu_percent(percpu=True,interval=FRSHTIME),
-            "cpu_temp": cpu_temp
+            "cpu_percent": per_cpu_util,
+            "cpu_temp": per_cpu_temp
         }
     return cpu_info
 
