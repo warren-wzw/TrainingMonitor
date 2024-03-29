@@ -1,5 +1,6 @@
 import GPUtil
 import psutil
+import subprocess
 
 FRSHTIME=1
 
@@ -12,9 +13,10 @@ def get_cpu_info():
         per_cpu_temp = sum(sensor.current for sensor in core_temp) / len(core_temp)
     cpu_percents=psutil.cpu_percent(percpu=True,interval=FRSHTIME)
     per_cpu_util=sum(cpu_percent*10 for cpu_percent in cpu_percents)/len(cpu_percents)
+    cpu_freq=psutil.cpu_freq().current
     cpu_info = {
             "logical_cpu_count": psutil.cpu_count(logical=False),
-            "cpu_freq":psutil.cpu_freq(),
+            "cpu_freq":cpu_freq/1000,
             "cpu_percent": per_cpu_util,
             "cpu_temp": per_cpu_temp
         }
@@ -24,10 +26,10 @@ def get_ram_info():
     # 获取系统内存信息
     mem_info = psutil.virtual_memory()
     ram_info = {
-        "total": mem_info.total,    # 总内存
+        "total": mem_info.total/(1024*1024*1024),    # 总内存
         "available": mem_info.available,  # 可用内存
         "percent": mem_info.percent,      # 内存使用百分比
-        "used": mem_info.used,            # 已使用内存
+        "used": mem_info.used/(1024*1024*1024),            # 已使用内存
         "free": mem_info.free             # 空闲内存
     }
     return ram_info
@@ -50,17 +52,39 @@ def get_disk_info():
         })
     return disk_info
 
+def get_gpu_power():
+    try:
+        # 获取当前 GPU 功耗
+        current_p_output = subprocess.check_output(['nvidia-smi', '--query-gpu=power.draw', '--format=csv,noheader,nounits'])
+        gpu_power_c = float(current_p_output.strip())
+        # 获取额定 GPU 功耗
+        rate_p_output = subprocess.check_output(['nvidia-smi', '--query-gpu=power.limit', '--format=csv,noheader,nounits'])
+        gpu_power_r = int(rate_p_output.strip())
+        # 输出当前 GPU 功耗和额定 GPU 功耗
+        print("Current GPU Power Consumption:", gpu_power_c, "W")
+        print("Rated GPU Power Consumption:", gpu_power_r, "W")
+        return gpu_power_c, gpu_power_r
+    except subprocess.CalledProcessError as e:
+        print("Error while executing nvidia-smi command:", e)
+        return None, None
+    except Exception as e:
+        print("Error while getting GPU power:", e)
+        return None, None 
+    
 def get_gpu_info():
     gpu_info = []
     gpus = GPUtil.getGPUs()
+    gpu_power_c,gpu_power_r=get_gpu_power()
     for gpu in gpus:
         gpu_info.append({
             "id": gpu.id,
             "name": gpu.name,
             "driver": gpu.driver,
-            "memory_total": gpu.memoryTotal,
-            "memory_used": gpu.memoryUsed,
-            "memory_free": gpu.memoryFree,
-            "temperature": gpu.temperature
+            "memory_total": gpu.memoryTotal/1024,
+            "memory_used": gpu.memoryUsed/1024,
+            "memory_free": gpu.memoryFree/1024,
+            "temperature": gpu.temperature,
+            "gpu_power_c":gpu_power_c,
+            "gpu_power_r":gpu_power_r
         })
     return gpu_info
