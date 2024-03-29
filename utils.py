@@ -52,29 +52,28 @@ def get_disk_info():
         })
     return disk_info
 
-def get_gpu_power():
+def get_gpu_power_c():
     try:
-        # 获取当前 GPU 功耗
-        current_p_output = subprocess.check_output(['nvidia-smi', '--query-gpu=power.draw', '--format=csv,noheader,nounits'])
-        gpu_power_c = float(current_p_output.strip())
-        # 获取额定 GPU 功耗
-        rate_p_output = subprocess.check_output(['nvidia-smi', '--query-gpu=power.limit', '--format=csv,noheader,nounits'])
-        gpu_power_r = int(rate_p_output.strip())
-        # 输出当前 GPU 功耗和额定 GPU 功耗
-        print("Current GPU Power Consumption:", gpu_power_c, "W")
-        print("Rated GPU Power Consumption:", gpu_power_r, "W")
-        return gpu_power_c, gpu_power_r
-    except subprocess.CalledProcessError as e:
-        print("Error while executing nvidia-smi command:", e)
-        return None, None
+        current_p = subprocess.check_output(['nvidia-smi', '--query-gpu=power.draw', '--format=csv,noheader,nounits'])
+        gpu_power_c = float(current_p.strip())
+        return gpu_power_c
     except Exception as e:
         print("Error while getting GPU power:", e)
-        return None, None 
+        return None
+def get_gpu_power_r():
+    try:
+        current_p = subprocess.check_output(['nvidia-smi', '--query-gpu=power.limit', '--format=csv,noheader,nounits'])
+        gpu_power_c = float(current_p.strip())
+        return gpu_power_c
+    except Exception as e:
+        print("Error while getting GPU power:", e)
+        return None
     
 def get_gpu_info():
     gpu_info = []
     gpus = GPUtil.getGPUs()
-    gpu_power_c,gpu_power_r=get_gpu_power()
+    gpu_power_c=get_gpu_power_c()
+    gpu_power_r=get_gpu_power_r()
     for gpu in gpus:
         gpu_info.append({
             "id": gpu.id,
