@@ -1,7 +1,7 @@
 import os
 import sys
 from Gui import GuiMode
-from Console import print_table,ConsoleMode
+from Console import ConsoleMode
 os.chdir(sys.path[0])
 
 def main():

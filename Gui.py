@@ -154,15 +154,16 @@ def GuiMode():
         gpu_temp=gpu_info[0]["temperature"]
         gpu_memory_total=gpu_info[0]["memory_total"]
         gpu_memory_used=gpu_info[0]["memory_used"]
+        gpu_power_c=gpu_info[0]["gpu_power_c"]
+        gpu_power_r=gpu_info[0]["gpu_power_r"]
         gpu_mem_used_p=(gpu_memory_used/gpu_memory_total)*100
         gpu_mem_scale=gpu_memory_used/gpu_memory_total
+        """gpu mem bar"""
         fill_width=BAR_SIZE*gpu_mem_scale
         Process_Bar(gpu_mem_canvas,fill_width)
         gpu_memory_used="{:.2f}".format(gpu_memory_used)
         gpu_memory_total="{:.2f}".format(gpu_memory_total)
         gpu_mem_used_p="{:.2f}".format(gpu_mem_used_p)
-        gpu_power_c=gpu_info[0]["gpu_power_c"]
-        gpu_power_r=gpu_info[0]["gpu_power_r"]
         gpu_info_label.config(text=f'ID:{gpu_id}  Name: {gpu_name}  Temp: {gpu_temp} °C ')
         gpu_mem_label.config(text=f'mem used:  {gpu_memory_used} GB / {gpu_memory_total} GB')
         gpu_mem_used_label.config(text=f' {gpu_mem_used_p} %')
@@ -170,6 +171,7 @@ def GuiMode():
         power_p="{:.2f}".format((gpu_power_c/gpu_power_r)*100)
         gpu_power_used_label_p.config(text=f' {power_p} %')
         gpu_consum_scale=gpu_power_c/gpu_power_r
+        """gpu power bar"""
         fill_width=BAR_SIZE*gpu_consum_scale
         Process_Bar(gpu_consum_canvas,fill_width)
         gpu_frame.after(FRESHTIME, update_gpu_mem)

@@ -74,6 +74,8 @@ def get_gpu_info():
     gpus = GPUtil.getGPUs()
     gpu_power_c=get_gpu_power_c()
     gpu_power_r=get_gpu_power_r()
+    if gpu_power_c > gpu_power_r:
+            gpu_power_c=gpu_power_r
     for gpu in gpus:
         gpu_info.append({
             "id": gpu.id,
