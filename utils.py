@@ -1,3 +1,4 @@
+import enum
 import GPUtil
 import psutil
 import subprocess
@@ -52,40 +53,48 @@ def get_disk_info():
         })
     return disk_info
 
-def get_gpu_power_c():
+def get_gpu_power_c(gpu_id=0):
     try:
-        current_p = subprocess.check_output(['nvidia-smi', '--query-gpu=power.draw', '--format=csv,noheader,nounits'])
+        current_p = subprocess.check_output(['nvidia-smi', '-i', str(gpu_id), '--query-gpu=power.draw', '--format=csv,noheader,nounits'])
         gpu_power_c = float(current_p.strip())
         return gpu_power_c
     except Exception as e:
-        print("Error while getting GPU power:", e)
+        print(f"Error while getting GPU {gpu_id} power consumption:", e)
         return None
-def get_gpu_power_r():
+
+def get_gpu_power_r(gpu_id=0):
     try:
-        current_p = subprocess.check_output(['nvidia-smi', '--query-gpu=power.limit', '--format=csv,noheader,nounits'])
-        gpu_power_c = float(current_p.strip())
-        return gpu_power_c
+        current_p = subprocess.check_output(['nvidia-smi', '-i', str(gpu_id), '--query-gpu=power.limit', '--format=csv,noheader,nounits'])
+        gpu_power_r = float(current_p.strip())
+        return gpu_power_r
     except Exception as e:
-        print("Error while getting GPU power:", e)
+        print(f"Error while getting GPU {gpu_id} power limit:", e)
         return None
     
 def get_gpu_info():
     gpu_info = []
     gpus = GPUtil.getGPUs()
-    gpu_power_c=get_gpu_power_c()
-    gpu_power_r=get_gpu_power_r()
-    if gpu_power_c > gpu_power_r:
-            gpu_power_c=gpu_power_r
-    for gpu in gpus:
+    gpu0_power_c = get_gpu_power_c(gpu_id=0)
+    gpu0_power_r = get_gpu_power_r(gpu_id=0)
+    gpu1_power_c = get_gpu_power_c(gpu_id=1)
+    gpu1_power_r = get_gpu_power_r(gpu_id=1)
+    gpu_power_c = [gpu0_power_c, gpu1_power_c]  # 当前功耗
+    gpu_power_r = [gpu0_power_r, gpu1_power_r]  # 参考功耗
+    
+    for i in range(len(gpu_power_c)):
+        if gpu_power_c[i] > gpu_power_r[i]:
+            gpu_power_c[i] = gpu_power_r[i]
+            
+    for index, gpu in enumerate(gpus):
         gpu_info.append({
             "id": gpu.id,
             "name": gpu.name,
             "driver": gpu.driver,
-            "memory_total": gpu.memoryTotal/1024,
-            "memory_used": gpu.memoryUsed/1024,
-            "memory_free": gpu.memoryFree/1024,
+            "memory_total": gpu.memoryTotal / 1024,
+            "memory_used": gpu.memoryUsed / 1024,
+            "memory_free": gpu.memoryFree / 1024,
             "temperature": gpu.temperature,
-            "gpu_power_c":gpu_power_c,
-            "gpu_power_r":gpu_power_r
+            "gpu_power_c": gpu_power_c[index],
+            "gpu_power_r": gpu_power_r[index]
         })
     return gpu_info
