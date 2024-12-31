@@ -8,9 +8,8 @@ os.chdir(sys.path[0])
 def main():
     if len(sys.argv) != 2:
         print("Usage: python monitor.py arg(1-console 2-GUI) ")
-        #sys.exit(1)
-    #arg = sys.argv[1]
-    arg = '2'
+        sys.exit(1)
+    arg = sys.argv[1]
     if arg=='1':
         ConsoleMode()
     elif arg=='2':

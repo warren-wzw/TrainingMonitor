@@ -9,7 +9,7 @@ from utils import get_cpu_info, get_ram_info, get_disk_info, get_gpu_info
 
 FONT_SIZE = 12
 BAR_SIZE = 700
-FRESHTIME = 50
+FRESHTIME = 200
 
 def Process_Bar(canvas, fill_width):
     canvas.delete("progress")  # 清除之前的进度条
@@ -116,7 +116,7 @@ def GuiMode():
     def update_disk_info():
         disk_infos = get_disk_info()
         for disk_info in disk_infos:
-            if disk_info['mountpoint'] == '/home':
+            if disk_info['mountpoint'] == '/home/DeepLearing':
                 disk_mount_point = disk_info['mountpoint']
                 disk_device = disk_info["device"]
                 disk_fstype = disk_info['fstype']
