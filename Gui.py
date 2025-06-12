@@ -3,13 +3,19 @@ import sys
 import time
 import threading
 import tkinter as tk
-from tkinter import ttk
 from datetime import datetime
 from utils import get_cpu_info, get_ram_info, get_disk_info, get_gpu_info
 
 FONT_SIZE = 12
 BAR_SIZE = 700
 FRESHTIME = 200
+
+WIDTH=770
+TIME_HEIGHT=40
+CPU_HEGHT=60
+RAM_HEIGHT=85
+DISK_HEIGHT=230
+GPU_HEIGHT=600
 
 def Process_Bar(canvas, fill_width):
     canvas.delete("progress")  # 清除之前的进度条
@@ -29,19 +35,19 @@ def update_info_thread(func, *args):
 def GuiMode():
     root = tk.Tk()
     root.title("Resource Monitor")
-    root.geometry("820x750")
+    root.geometry(f"{WIDTH+50}x{TIME_HEIGHT+CPU_HEGHT+RAM_HEIGHT+DISK_HEIGHT+GPU_HEIGHT-150}")
     root.configure(bg="black")
 
     """create frame"""
-    time_frame = tk.Frame(root, bg="black", bd=2, relief=tk.GROOVE, width=770, height=40)
+    time_frame = tk.Frame(root, bg="black", bd=2, relief=tk.GROOVE, width=770, height=TIME_HEIGHT)
     time_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-    cpu_frame = tk.Frame(root, bg="black", bd=2, relief=tk.GROOVE, width=770, height=60)
+    cpu_frame = tk.Frame(root, bg="black", bd=2, relief=tk.GROOVE, width=770, height=CPU_HEGHT)
     cpu_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-    ram_frame = tk.Frame(root, bg="black", bd=2, relief=tk.GROOVE, width=770, height=85)
+    ram_frame = tk.Frame(root, bg="black", bd=2, relief=tk.GROOVE, width=770, height=RAM_HEIGHT)
     ram_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-    disk_frame = tk.Frame(root, bg="black", bd=2, relief=tk.GROOVE, width=770, height=110)
+    disk_frame = tk.Frame(root, bg="black", bd=2, relief=tk.GROOVE, width=770, height=DISK_HEIGHT)
     disk_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-    gpu_frame = tk.Frame(root, bg="black", bd=2, relief=tk.GROOVE, width=770, height=600)
+    gpu_frame = tk.Frame(root, bg="black", bd=2, relief=tk.GROOVE, width=770, height=GPU_HEIGHT)
     gpu_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
     """time"""
@@ -97,7 +103,7 @@ def GuiMode():
         ram_info_label.config(text=f'ram used: {ram_mem_used}GB / {ram_mem_total}GB')
         ram_used_label.config(text=f' {used_p}%')
 
-    """block info"""
+    """DISK info"""
     disk_label = tk.Label(disk_frame, text="DISK infos:", 
                                 font=("Arial", FONT_SIZE, "bold"), fg='lime', bg="black")
     disk_label.place(x=10, y=10)
@@ -112,25 +118,70 @@ def GuiMode():
     disk_mem_used_label.place(x=710, y=85)
     disk_canvas = tk.Canvas(disk_frame, width=BAR_SIZE, height=20)
     disk_canvas.place(x=10, y=85)
+    # BlueDisk info
+    blue_disk_info_label = tk.Label(disk_frame, text=" ", 
+                                    font=("Arial", FONT_SIZE, "bold"), fg='deepskyblue', bg="black")
+    blue_disk_info_label.place(x=10, y=120)
+
+    blue_disk_mem_label = tk.Label(disk_frame, text=" ", 
+                                font=("Arial", FONT_SIZE, "bold"), fg='lightblue', bg="black")
+    blue_disk_mem_label.place(x=10, y=145)
+
+    blue_disk_mem_used_label = tk.Label(disk_frame, text=" ", 
+                                        font=("Arial", FONT_SIZE, "bold"), fg='yellow', bg="black")
+    blue_disk_mem_used_label.place(x=710, y=170)
+
+    blue_disk_canvas = tk.Canvas(disk_frame, width=BAR_SIZE, height=20)
+    blue_disk_canvas.place(x=10, y=170)
     
     def update_disk_info():
         disk_infos = get_disk_info()
+        deep_disk = None
+        blue_disk = None
+
         for disk_info in disk_infos:
             if disk_info['mountpoint'] == '/home/DeepLearing':
-                disk_mount_point = disk_info['mountpoint']
-                disk_device = disk_info["device"]
-                disk_fstype = disk_info['fstype']
-                disk_total = disk_info['total'] / (1024**3)
-                disk_used = disk_info['used'] / (1024**3)
-        disk_scale = disk_used / disk_total
-        fill_width = BAR_SIZE * disk_scale
-        Process_Bar(disk_canvas, fill_width)
-        disk_used_p = "{:.2f}".format((disk_used / disk_total) * 100)
-        disk_used = "{:.2f}".format(disk_used)
-        disk_total = "{:.2f}".format(disk_total)
-        disk_info_label.config(text=f'Mountpoint : {disk_mount_point}  FileSys : {disk_fstype}')
-        disk_mem_label.config(text=f'mem used : {disk_used}GB / {disk_total}GB')
-        disk_mem_used_label.config(text=f' {disk_used_p} %')
+                deep_disk = disk_info
+            elif disk_info['mountpoint'] == '/home/BlueDisk':
+                blue_disk = disk_info
+
+        # 更新 DeepLearing 磁盘信息
+        if deep_disk:
+            total = deep_disk['total'] / (1024**3)
+            used = deep_disk['used'] / (1024**3)
+            scale = used / total if total > 0 else 0
+            fill_width = BAR_SIZE * scale
+            Process_Bar(disk_canvas, fill_width)
+            used_p = f"{scale * 100:.2f}"
+            used_str = f"{used:.2f}"
+            total_str = f"{total:.2f}"
+            disk_info_label.config(text=f"Mountpoint: {deep_disk['mountpoint']}  FileSys: {deep_disk['fstype']}")
+            disk_mem_label.config(text=f"mem used: {used_str}GB / {total_str}GB")
+            disk_mem_used_label.config(text=f"{used_p} %")
+        else:
+            disk_info_label.config(text="DeepLearing disk not found")
+            disk_mem_label.config(text="")
+            disk_mem_used_label.config(text="")
+            disk_canvas.delete("all")
+
+        # 更新 BlueDisk 磁盘信息
+        if blue_disk:
+            total = blue_disk['total'] / (1024**3)
+            used = blue_disk['used'] / (1024**3)
+            scale = used / total if total > 0 else 0
+            fill_width = BAR_SIZE * scale
+            Process_Bar(blue_disk_canvas, fill_width)
+            used_p = f"{scale * 100:.2f}"
+            used_str = f"{used:.2f}"
+            total_str = f"{total:.2f}"
+            blue_disk_info_label.config(text=f"Mountpoint: {blue_disk['mountpoint']}  FileSys: {blue_disk['fstype']}")
+            blue_disk_mem_label.config(text=f"mem used: {used_str}GB / {total_str}GB")
+            blue_disk_mem_used_label.config(text=f"{used_p} %")
+        else:
+            blue_disk_info_label.config(text="BlueDisk disk not found")
+            blue_disk_mem_label.config(text="")
+            blue_disk_mem_used_label.config(text="")
+            blue_disk_canvas.delete("all")
 
     """GPU info"""
     gpu_info_labels = []
